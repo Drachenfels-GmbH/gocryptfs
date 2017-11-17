@@ -24,7 +24,7 @@ type argContainer struct {
 	noprealloc, speed, hkdf, serialize_reads, forcedecode, hh, info,
 	sharedstorage bool
 	masterkey, mountpoint, cipherdir, cpuprofile, extpass,
-	memprofile, ko, passfile, ctlsock, fsname, force_owner, trace string
+	memprofile, ko, passfile, ctlsock, fsname, force_owner, trace, keyctl string
 	// Configuration file name override
 	config             string
 	notifypid, scryptn int
@@ -143,6 +143,7 @@ func parseCliOpts() (args argContainer) {
 	flagSet.StringVar(&args.fsname, "fsname", "", "Override the filesystem name")
 	flagSet.StringVar(&args.force_owner, "force_owner", "", "uid:gid pair to coerce ownership")
 	flagSet.StringVar(&args.trace, "trace", "", "Write execution trace to file")
+	flagSet.StringVar(&args.keyctl, "keyctl", "", "Use key ID to request password from linux kernel keyring")
 	flagSet.IntVar(&args.notifypid, "notifypid", 0, "Send USR1 to the specified process after "+
 		"successful mount - used internally for daemonization")
 	flagSet.IntVar(&args.scryptn, "scryptn", configfile.ScryptDefaultLogN, "scrypt cost parameter logN. Possible values: 10-28. "+
@@ -205,8 +206,12 @@ func parseCliOpts() (args argContainer) {
 	if args.passfile != "" {
 		args.extpass = "/bin/cat -- " + args.passfile
 	}
-	if args.extpass != "" && args.masterkey != "" {
-		tlog.Fatal.Printf("The options -extpass and -masterkey cannot be used at the same time")
+
+	pw1 := args.extpass != ""
+	pw2 := args.masterkey != ""
+	pw3 := args.keyctl != ""
+	if (pw1 && pw2) || (pw2 && pw3) || (pw1 && pw3) {
+		tlog.Fatal.Printf("The options -extpass, -masterkey and -keyctl are mutual exclusive.")
 		os.Exit(exitcodes.Usage)
 	}
 	return args

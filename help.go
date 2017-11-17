@@ -28,6 +28,7 @@ Common Options (use -hh to show all):
   -hh                Long help text with all options
   -init              Initialize encrypted directory
   -info              Display information about encrypted directory
+  -keyctl            Use key ID to request password from linux kernel keyring
   -masterkey         Mount with explicit master key instead of password
   -nonempty          Allow mounting over non-empty directory
   -nosyslog          Do not redirect log messages to syslog
