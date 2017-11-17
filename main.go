@@ -46,7 +46,12 @@ func loadConfig(args *argContainer) (masterkey []byte, confFile *configfile.Conf
 		masterkey = parseMasterKey(args.masterkey)
 		_, confFile, err = configfile.LoadConfFile(args.config, "")
 	} else {
-		pw := readpassword.Once(args.extpass)
+		var pw string
+		if args.extpass != "" {
+			pw = readpassword.Once(args.extpass)
+		} else if args.keyctl != "" {
+			pw = readpassword.KeyctlRequest(args.keyctl)
+		}
 		tlog.Info.Println("Decrypting master key")
 		masterkey, confFile, err = configfile.LoadConfFile(args.config, pw)
 	}

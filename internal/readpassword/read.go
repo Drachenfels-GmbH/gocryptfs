@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/crypto/ssh/terminal"
 
+	"github.com/jsipprell/keyctl"
 	"github.com/rfjakob/gocryptfs/internal/exitcodes"
 	"github.com/rfjakob/gocryptfs/internal/tlog"
 )
@@ -178,4 +179,29 @@ func CheckTrailingGarbage() {
 	// read one byte. However, I don't see a way to be sure.
 	wg.Wait()
 	time.Sleep(1 * time.Millisecond)
+}
+
+func KeyctlRequest(keyID string) string {
+	pwd, err := keyctlRequest(keyID)
+	if err != nil {
+		tlog.Fatal.Printf("Reading password from kernel keyring failed: %v", err)
+		os.Exit(exitcodes.ReadPassword)
+	}
+	return pwd
+}
+
+func keyctlRequest(keyID string) (string, error) {
+	ring, err := keyctl.SessionKeyring()
+	if err != nil {
+		return "", err
+	}
+	key, err := ring.Search(keyID)
+	if err != nil {
+		return "", err
+	}
+	data, err := key.Get()
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
